@@ -1,0 +1,17 @@
+.registro code {
+    display: block;
+    overflow-wrap: anywhere;
+    padding: 0.25rem 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+}
+
+textarea {
+    resize: vertical;
+}
+
+@media (max-width: 576px) {
+    .registro {
+        padding: 1.25rem;
+    }
+}
