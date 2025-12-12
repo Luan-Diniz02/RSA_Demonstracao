@@ -3,57 +3,138 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Conversa RSA</title>
+    <title>Sistema Didático - Criptografia Assimétrica RSA</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body class="bg-light">
-    <div class="container py-4">
-        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-4">
-            <div>
-                <h1 class="h3 mb-2">Demo de Conversa RSA</h1>
-                <p class="text-muted mb-0">Envie mensagens entre Fernanda e Frank para visualizar a criptografia RSA em acao. Use <code>sair</code> para encerrar.</p>
+    <div class="container-fluid py-4">
+        <!-- Cabeçalho -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-primary">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                            <div>
+                                <h1 class="h3 mb-2">
+                                    <i class="bi bi-shield-lock-fill text-primary"></i>
+                                    Sistema Didático - Criptografia Assimétrica RSA
+                                </h1>
+                                <p class="text-muted mb-0">Ferramenta educacional para entender criptografia RSA e assinatura digital</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button id="btn-toggle-assinatura" class="btn btn-outline-success">
+                                    <i class="bi bi-pen-fill"></i> Assinatura Digital: <span id="status-assinatura">ON</span>
+                                </button>
+                                <button id="btn-reset" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-clockwise"></i> Nova conversa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button id="btn-reset" class="btn btn-outline-primary">Nova conversa</button>
         </div>
 
-        <div id="alerta" class="alert d-none" role="alert"></div>
+        <!-- Painel Explicativo -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm bg-info bg-opacity-10 border-info">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-info-circle-fill"></i> Como Funciona
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <h6 class="fw-bold"><i class="bi bi-lock-fill text-primary"></i> Criptografia RSA</h6>
+                                <p class="small mb-0">Cada usuário possui um par de chaves (pública e privada). A mensagem é criptografada com a chave pública do destinatário e só pode ser descriptografada com sua chave privada.</p>
+                            </div>
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <h6 class="fw-bold"><i class="bi bi-pen-fill text-success"></i> Assinatura Digital</h6>
+                                <p class="small mb-0">O remetente assina a mensagem com sua chave privada. O destinatário verifica com a chave pública do remetente, garantindo <strong>autenticidade</strong> e <strong>não-repúdio</strong>.</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="fw-bold"><i class="bi bi-check-circle-fill text-warning"></i> Integridade</h6>
+                                <p class="small mb-0">O hash SHA-256 da mensagem é calculado antes e depois. Se os hashes coincidirem, a mensagem não foi alterada, garantindo <strong>integridade</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
+        <!-- Alertas -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div id="alerta" class="alert d-none" role="alert"></div>
+            </div>
+        </div>
+
+        <!-- Área de Chat dos Usuários -->
         <div class="row g-4 mb-4">
             <div class="col-12 col-lg-6">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-primary text-white">Fernanda</div>
+                <div class="card h-100 shadow-sm border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <i class="bi bi-person-circle"></i> Fernanda
+                        <small class="float-end">
+                            <i class="bi bi-key-fill"></i> Possui chave pública e privada
+                        </small>
+                    </div>
                     <div class="card-body">
                         <form id="form-fernanda" data-remetente="fernanda" class="d-flex flex-column gap-3">
                             <div>
                                 <label for="msg-fernanda" class="form-label">Mensagem para Frank</label>
-                                <textarea id="msg-fernanda" class="form-control" rows="3" required></textarea>
+                                <textarea id="msg-fernanda" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> A mensagem será criptografada com a chave pública de Frank
+                                </small>
                             </div>
-                            <button type="submit" class="btn btn-primary">Enviar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send-fill"></i> Enviar e Criptografar
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="col-12 col-lg-6">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-success text-white">Frank</div>
+                <div class="card h-100 shadow-sm border-success">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-person-circle"></i> Frank
+                        <small class="float-end">
+                            <i class="bi bi-key-fill"></i> Possui chave pública e privada
+                        </small>
+                    </div>
                     <div class="card-body">
                         <form id="form-frank" data-remetente="frank" class="d-flex flex-column gap-3">
                             <div>
                                 <label for="msg-frank" class="form-label">Mensagem para Fernanda</label>
-                                <textarea id="msg-frank" class="form-control" rows="3" required></textarea>
+                                <textarea id="msg-frank" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i> A mensagem será criptografada com a chave pública de Fernanda
+                                </small>
                             </div>
-                            <button type="submit" class="btn btn-success">Enviar</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-send-fill"></i> Enviar e Criptografar
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white">Linha do tempo</div>
-            <div class="card-body">
-                <div id="mensagens" class="d-flex flex-column gap-3"></div>
+        <!-- Linha do Tempo das Mensagens -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <i class="bi bi-clock-history"></i> Linha do Tempo da Comunicação
+                        <small class="float-end">Visualização educacional do processo completo</small>
+                    </div>
+                    <div class="card-body">
+                        <div id="mensagens" class="d-flex flex-column gap-3"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

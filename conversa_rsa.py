@@ -1,6 +1,9 @@
 import binascii
 from flask import Flask, render_template, request, jsonify
-from rsa_utils import gerar_par_chaves, criptografar, descriptografar
+from rsa_utils import (
+    gerar_par_chaves, criptografar, descriptografar,
+    assinar_mensagem, verificar_assinatura, calcular_hash
+)
 
 
 app = Flask(__name__)
@@ -16,6 +19,7 @@ def reset_estado():
     estado["chave_publica_fernanda"] = estado["chave_fernanda"].publickey()
     estado["mensagens"] = []
     estado["encerrada"] = False
+    estado["modo_assinatura"] = True  # Assinatura digital ativada por padrão
 
 
 reset_estado()
@@ -25,6 +29,7 @@ def estado_publico():
     return {
         "mensagens": estado["mensagens"],
         "encerrada": estado["encerrada"],
+        "modo_assinatura": estado.get("modo_assinatura", True),
     }
 
 
@@ -43,10 +48,15 @@ def registrar_envio(remetente, mensagem):
     if remetente == "fernanda":
         chave_publica_destino = estado["chave_publica_frank"]
         chave_privada_destino = estado["chave_frank"]
+        chave_privada_remetente = estado["chave_fernanda"]
+        chave_publica_remetente = estado["chave_publica_fernanda"]
     else:
         chave_publica_destino = estado["chave_publica_fernanda"]
         chave_privada_destino = estado["chave_fernanda"]
+        chave_privada_remetente = estado["chave_frank"]
+        chave_publica_remetente = estado["chave_publica_frank"]
 
+    # Criptografar mensagem
     ciphertext = criptografar(mensagem, chave_publica_destino)
     plaintext_destino = descriptografar(ciphertext, chave_privada_destino)
 
@@ -56,7 +66,23 @@ def registrar_envio(remetente, mensagem):
         "plaintext": mensagem,
         "ciphertext": binascii.hexlify(ciphertext).decode(),
         "decrypted": plaintext_destino,
+        "hash_original": calcular_hash(mensagem),
     }
+
+    # Adicionar assinatura digital se o modo estiver ativado
+    if estado.get("modo_assinatura", True):
+        assinatura = assinar_mensagem(mensagem, chave_privada_remetente)
+        registro["assinatura"] = binascii.hexlify(assinatura).decode()
+        
+        # Verificar assinatura
+        assinatura_valida = verificar_assinatura(mensagem, assinatura, chave_publica_remetente)
+        registro["assinatura_valida"] = assinatura_valida
+        
+        # Verificar integridade comparando hash
+        hash_recebido = calcular_hash(plaintext_destino)
+        registro["hash_recebido"] = hash_recebido
+        registro["integridade"] = registro["hash_original"] == hash_recebido
+    
     estado["mensagens"].append(registro)
     return {"mensagem": registro, "encerrada": False}
 
@@ -97,6 +123,29 @@ def nova_mensagem():
 def resetar():
     reset_estado()
     return jsonify({"estado": estado_publico()})
+
+
+@app.route("/toggle-assinatura", methods=["POST"])
+def toggle_assinatura():
+    estado["modo_assinatura"] = not estado.get("modo_assinatura", True)
+    return jsonify({"estado": estado_publico()})
+
+
+@app.route("/info-chaves", methods=["GET"])
+def info_chaves():
+    """Retorna informações educacionais sobre as chaves públicas"""
+    return jsonify({
+        "frank": {
+            "modulo": str(estado["chave_publica_frank"].n)[:50] + "...",
+            "expoente": str(estado["chave_publica_frank"].e),
+            "tamanho_bits": estado["chave_publica_frank"].size_in_bits()
+        },
+        "fernanda": {
+            "modulo": str(estado["chave_publica_fernanda"].n)[:50] + "...",
+            "expoente": str(estado["chave_publica_fernanda"].e),
+            "tamanho_bits": estado["chave_publica_fernanda"].size_in_bits()
+        }
+    })
 
 
 @app.route("/estado", methods=["GET"])
